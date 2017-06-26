@@ -14,6 +14,7 @@ var Authors = React.createClass({
             this.setState({ authors: AuthorApi.getAllAuthors() });
         }
     },
+
     render: function() {
         return (
             <div>
