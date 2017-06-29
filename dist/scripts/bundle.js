@@ -50258,17 +50258,46 @@ var actionTypes = require('../constans/actionTypes');
 var AuthorActions = {
     createAuthor: function (author) {
         var newAuthor = AuthorApi.saveAuthor(author);
-
         Dispatcher.dispatch({
-            actionType: actionTypes.CREATE_AUTHOR,
+            ActionTypes: actionTypes.CREATE_AUTHOR,
             author: newAuthor
         });
+    },
+
+    updateAuthor: function (author) {
+        var updateAuthor = AuthorApi.saveAuthor(author);
+        Dispatcher.dispatch({
+            ActionTypes: actionTypes.UPDATE_AUTHOR,
+            author: updateAuthor
+        });
     }
+
+    
 };
 
 module.exports = AuthorActions;
 
-},{"../api/authorApi":205,"../constans/actionTypes":216,"../dispatcher/appDispatcher":217}],205:[function(require,module,exports){
+},{"../api/authorApi":206,"../constans/actionTypes":217,"../dispatcher/appDispatcher":218}],205:[function(require,module,exports){
+"use strict";
+
+var Dispatcher = require('../dispatcher/appDispatcher');
+var ActionTypes = require('../constans/actionTypes');
+var AuthorApi = require('../api/authorApi');
+
+var InitializeActions = {
+    initApp: function() {
+        Dispatcher.dispatch({
+            ActionTypes: ActionTypes.INITIALIZE,
+            initialData: {
+                authors: AuthorApi.getAllAuthors()
+            }
+        });
+    }
+};
+
+module.exports = InitializeActions;
+
+},{"../api/authorApi":206,"../constans/actionTypes":217,"../dispatcher/appDispatcher":218}],206:[function(require,module,exports){
 "use strict";
 
 //This file is mocking a web API by hitting hard coded data.
@@ -50320,7 +50349,7 @@ var AuthorApi = {
 
 module.exports = AuthorApi;
 
-},{"./authorData":206,"lodash":6}],206:[function(require,module,exports){
+},{"./authorData":207,"lodash":6}],207:[function(require,module,exports){
 module.exports = {
 	authors: 
 	[
@@ -50342,7 +50371,7 @@ module.exports = {
 	]
 };
 
-},{}],207:[function(require,module,exports){
+},{}],208:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -50371,7 +50400,7 @@ var About = React.createClass({displayName: "About",
 
 module.exports = About;
 
-},{"react":202}],208:[function(require,module,exports){
+},{"react":202}],209:[function(require,module,exports){
 "use strict";
 var React = require('react');
 var Header = require('./common/header');
@@ -50392,7 +50421,7 @@ var App = React.createClass({displayName: "App",
 });
 module.exports = App;
 
-},{"./common/header":213,"jquery":5,"react":202,"react-router":33}],209:[function(require,module,exports){
+},{"./common/header":214,"jquery":5,"react":202,"react-router":33}],210:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -50430,20 +50459,30 @@ var AuthorForm = React.createClass({displayName: "AuthorForm",
 
 module.exports = AuthorForm;
 
-},{"../common/textInput":214,"react":202}],210:[function(require,module,exports){
+},{"../common/textInput":215,"react":202}],211:[function(require,module,exports){
 "use strict";
 var React = require('react');
 var Router = require('react-router');
 var Link = require('react-router').Link;
+var AuthorActions = require('../../actions/authorActions');
+var toastr = require('toastr');
+
 var AuthorsList = React.createClass({displayName: "AuthorsList",
     propTypes: {
         authors: React.PropTypes.array.isRequired
+    },
+
+    deleteAuthor: function(id, event) {
+        event.preventDefault();
+        AuthorActions.deleteAuthor(id);
+        toastr.success('Author Delted');
     },
     render: function() {
         var createAuthorRow = function(author) {
             return (
                 React.createElement("tr", {key: author.id}, 
                     /*<td><a href={"/#authors/" + author.id }>{author.id}</a></td>*/
+                    React.createElement("td", null, " ", React.createElement("a", {href: "#", onClick: this.deleteAuthor.bind(this, author.id)}, "Delete")), 
                     React.createElement("td", null, " ", React.createElement(Link, {to: "manageAuthor", params: {id: author.id}}, author.id)), 
                     React.createElement("td", null, " ", author.firstName, " ", author.lastName, " ")
                 )
@@ -50454,6 +50493,7 @@ var AuthorsList = React.createClass({displayName: "AuthorsList",
                 React.createElement("h1", null, "Authors "), 
                 React.createElement("table", {className: "table"}, 
                     React.createElement("thead", null, 
+                        React.createElement("th", null), 
                         React.createElement("th", null, "ID"), 
                         React.createElement("th", null, "Name")
                     ), 
@@ -50467,24 +50507,29 @@ var AuthorsList = React.createClass({displayName: "AuthorsList",
 });
 module.exports = AuthorsList;
 
-},{"react":202,"react-router":33}],211:[function(require,module,exports){
+},{"../../actions/authorActions":204,"react":202,"react-router":33,"toastr":203}],212:[function(require,module,exports){
 "use strict";
 var React = require('react');
-var AuthorApi = require('../../api/authorApi');
 var AuthorList = require('./authorList');
+var AuthorStore = require('../../stores/authorStore');
+var AuthorActions = require('../../actions/authorActions');
 var Link = require('react-router').Link;
 var Authors = React.createClass({displayName: "Authors",
     getInitialState: function() {
        return {
-              authors: []  
+              authors: AuthorStore.getAllAuthors()  
             };
     },
-    componentDidMount: function() {
-        if (this.isMounted()) {
-            this.setState({ authors: AuthorApi.getAllAuthors() });
-        }
-    },
 
+    componentWillMount: function() {
+      AuthorStore.addChangeListener(this._onChange);  
+    },
+    componentWillUnmount: function () {
+        AuthorStore.removeChangeListener(this._onChange);
+    },
+    _onChange: function () {
+        this.setState({authors: AuthorStore.getAllAuthors()});
+    },
     render: function() {
         return (
             React.createElement("div", null, 
@@ -50497,13 +50542,12 @@ var Authors = React.createClass({displayName: "Authors",
 });
 module.exports = Authors;
 
-},{"../../api/authorApi":205,"./authorList":210,"react":202,"react-router":33}],212:[function(require,module,exports){
+},{"../../actions/authorActions":204,"../../stores/authorStore":221,"./authorList":211,"react":202,"react-router":33}],213:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
 var Router = require('react-router');
 var AuthorForm = require('./authorForm');
-var AuthorApi = require('../../api/authorApi');
 var AuthorStore = require('../../stores/authorStore');
 var AuthorActions = require('../../actions/authorActions');
 var toastr = require('toastr');
@@ -50561,8 +50605,11 @@ var ManageAuthorPage = React.createClass({displayName: "ManageAuthorPage",
         if (!this.authorformIsValid()) {
             return;
         }
+        if (this.state.author.id) {
+            AuthorActions.updateAuthor(this.state.author);
+        }
         AuthorActions.createAuthor(this.state.author);
-        this.set({dirty: false});
+        this.setState({dirty: false});
         toastr.success('Author saved.');
         this.transitionTo('authors');
     },
@@ -50580,7 +50627,7 @@ var ManageAuthorPage = React.createClass({displayName: "ManageAuthorPage",
 
 module.exports = ManageAuthorPage;
 
-},{"../../actions/authorActions":204,"../../api/authorApi":205,"../../stores/authorStore":220,"./authorForm":209,"react":202,"react-router":33,"toastr":203}],213:[function(require,module,exports){
+},{"../../actions/authorActions":204,"../../stores/authorStore":221,"./authorForm":210,"react":202,"react-router":33,"toastr":203}],214:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -50607,7 +50654,7 @@ var Header = React.createClass({displayName: "Header",
 
 module.exports = Header;
 
-},{"react":202,"react-router":33}],214:[function(require,module,exports){
+},{"react":202,"react-router":33}],215:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -50647,7 +50694,7 @@ var Input = React.createClass({displayName: "Input",
 
 module.exports = Input;
 
-},{"react":202}],215:[function(require,module,exports){
+},{"react":202}],216:[function(require,module,exports){
 "use strict";
 var React = require('react');
 
@@ -50664,32 +50711,38 @@ var Home = React.createClass({displayName: "Home",
 
 module.exports = Home;
 
-},{"react":202}],216:[function(require,module,exports){
+},{"react":202}],217:[function(require,module,exports){
 "use strict";
 
 var keyMirror = require('react/lib/keyMirror');
 
-module.exports = ({
-    CREATE_AUTHOR: null
+module.exports = keyMirror({
+    INITIALIZE: null,
+    CREATE_AUTHOR: null,
+    UPDATE_AUTHOR: null,
+    DELETE_AUTHOR: null
 });
 
-},{"react/lib/keyMirror":187}],217:[function(require,module,exports){
+},{"react/lib/keyMirror":187}],218:[function(require,module,exports){
 var Dispatcher = require('flux').Dispatcher;
 
-module.exports = Dispatcher;
+module.exports = new Dispatcher();
 
-},{"flux":2}],218:[function(require,module,exports){
+},{"flux":2}],219:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
 var Router = require('react-router');
 var routes = require('./routes');
+var InitializeActions = require('./actions/initializeActions');
+
+InitializeActions.initApp();
 
 Router.run(routes, function(Handler) {
     React.render(React.createElement(Handler, null), document.getElementById('app'));
 });
 
-},{"./routes":219,"react":202,"react-router":33}],219:[function(require,module,exports){
+},{"./actions/initializeActions":205,"./routes":220,"react":202,"react-router":33}],220:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -50713,47 +50766,68 @@ var routes = (
 
 module.exports = routes;
 
-},{"./components/about/aboutPage":207,"./components/app":208,"./components/authors/authorPage":211,"./components/authors/manageAuthorPage":212,"./components/homePage":215,"react":202,"react-router":33}],220:[function(require,module,exports){
+},{"./components/about/aboutPage":208,"./components/app":209,"./components/authors/authorPage":212,"./components/authors/manageAuthorPage":213,"./components/homePage":216,"react":202,"react-router":33}],221:[function(require,module,exports){
 "use strict";
 
 var Dispatcher = require('../dispatcher/appDispatcher');
 var ActionTypes = require('../constans/actionTypes');
 var EventEmitter = require('events').EventEmitter;
 var assign = require('object-assign');
-var CHANGE_EVENT = 'change';
 var _ = require('lodash');
+var CHANGE_EVENT = 'change';
+
 var _authors = [];
-console.log(Dispatcher);
 
-var AuthorStore = assign({}, EventEmitter.proptotype, {
-    addChangeListener: function(callback) {
-        this.on(CHANGE_EVENT, callback);
-    },
-    removeChangeListener: function(callback) {
-        this.removeChangeListener(CHANGE_EVENT, callback);
-    },
+var AuthorStore = assign({}, EventEmitter.prototype, {
+	addChangeListener: function(callback) {
+		this.on(CHANGE_EVENT, callback);
+	},
 
-    emitChange: function() {
-        this.emit(CHANGE_EVENT);
-    },
+	removeChangeListener: function(callback) {
+		this.removeListener(CHANGE_EVENT, callback);
+	},
 
-    getAllAuthors: function() {
-        return _authors;
-    },
+	emitChange: function() {
+		this.emit(CHANGE_EVENT);
+	},
 
-    getAuthorById: function(id) {
-        return _.find(_authors, {id: id});
-    }
+	getAllAuthors: function() {
+		return _authors;
+	},
+
+	getAuthorById: function(id) {
+		return _.find(_authors, {id: id});
+	}
 });
 
-// Dispatcher.register(function(action) {
-//     switch(action.ActionTypes) {
-//         case ActionTypes.CREATE_AUTHOR:
-//         _authors.push(action.author);
-//         AuthorStore.emitChange();
-//     }
-// });
+Dispatcher.register(function(action) {
+
+	switch(action.ActionTypes) {
+		case ActionTypes.INITIALIZE:
+			_authors = action.initialData.authors;
+			AuthorStore.emitChange();
+			break;
+		case ActionTypes.CREATE_AUTHOR:
+			_authors.push(action.author);
+			AuthorStore.emitChange();
+			break;
+		case ActionTypes.UPDATE_AUTHOR:
+			var existingAuthor = _.find(_authors, {id: action.author.id});
+			var existingAuthorIndex = _.indexOf(_authors, existingAuthor); 
+			_authors.splice(existingAuthorIndex, 1, action.author);
+			AuthorStore.emitChange();
+			break;	
+		// case ActionTypes.DELETE_AUTHOR:
+		// 	_.remove(_authors, function(author) {
+		// 		return action.id === author.id;
+		// 	});
+		// 	AuthorStore.emitChange();
+			break;
+		default:
+			// no op
+	}
+});
 
 module.exports = AuthorStore;
 
-},{"../constans/actionTypes":216,"../dispatcher/appDispatcher":217,"events":1,"lodash":6,"object-assign":7}]},{},[218]);
+},{"../constans/actionTypes":217,"../dispatcher/appDispatcher":218,"events":1,"lodash":6,"object-assign":7}]},{},[219]);

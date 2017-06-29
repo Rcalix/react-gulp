@@ -3,7 +3,6 @@
 var React = require('react');
 var Router = require('react-router');
 var AuthorForm = require('./authorForm');
-var AuthorApi = require('../../api/authorApi');
 var AuthorStore = require('../../stores/authorStore');
 var AuthorActions = require('../../actions/authorActions');
 var toastr = require('toastr');
@@ -61,8 +60,11 @@ var ManageAuthorPage = React.createClass({
         if (!this.authorformIsValid()) {
             return;
         }
+        if (this.state.author.id) {
+            AuthorActions.updateAuthor(this.state.author);
+        }
         AuthorActions.createAuthor(this.state.author);
-        this.set({dirty: false});
+        this.setState({dirty: false});
         toastr.success('Author saved.');
         this.transitionTo('authors');
     },
